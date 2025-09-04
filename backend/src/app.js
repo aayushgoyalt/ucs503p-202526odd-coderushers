@@ -33,10 +33,9 @@ app.get("/api/ping", (req, res) => {
 });
 
 //routes import
-
+import trialRouter from "./routes/ques.routes.js";
 
 //routes decalaration
-
-
+app.use("/api", trialRouter);
 
 export { app }
