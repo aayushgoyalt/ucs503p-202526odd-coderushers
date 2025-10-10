@@ -33,9 +33,11 @@ app.get("/api/ping", (req, res) => {
 });
 
 //routes import
-import trialRouter from "./routes/ques.routes.js";
+import userRoutes from "./routes/user.routes.js"
+import dsaRoutes from "./routes/dsa.routes.js"
 
 //routes decalaration
-app.use("/api", trialRouter);
+app.use("/api/users", userRoutes)
+app.use("/api/dsa", dsaRoutes)
 
 export { app }

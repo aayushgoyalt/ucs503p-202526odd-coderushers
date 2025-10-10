@@ -22,27 +22,11 @@ const userSchema = new Schema(
         refreshToken: {
             type: String
         },
-        total:{
-            type: Number,
-            default: 0
-        },
-        easy: {
-            type: Number,
-            default: 0
-        },
-        medium: {
-            type: Number,
-            default: 0
-        },
-        hard: {
-            type: Number,
-            default: 0
-        },
-        solvedProblems: [
+        DSAsolvedProblems: [
             {
                 question: {
                     type: mongoose.Schema.Types.ObjectId,
-                    ref: 'Question',
+                    ref: 'Dsa',
                     required: true
                 },
                 solvedOn: {
@@ -60,17 +44,7 @@ const userSchema = new Schema(
             type: String,
             enum: ["user", "admin"],
             default: "user",
-        },
-        lastMissedDate: {
-            type: Date,
-            default: null,
-        },
-        contestPrefrences:[
-            {
-                type: String,
-                default:"null"
-            }
-        ]
+        }
     },
     {
         timestamps: true

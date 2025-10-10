@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import { Schema } from "mongoose";
 
-const QuestionSchema = new Schema(
+const DsaSchema = new Schema(
   {
     Qid: {
         type: String,
@@ -37,4 +37,4 @@ const QuestionSchema = new Schema(
   }
 );
 
-export const Question = mongoose.model('Question', QuestionSchema);
+export const Dsa = mongoose.model('Dsa', DsaSchema);
