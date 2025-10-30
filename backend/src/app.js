@@ -35,9 +35,11 @@ app.get("/api/ping", (req, res) => {
 //routes import
 import userRoutes from "./routes/user.routes.js"
 import dsaRoutes from "./routes/dsa.routes.js"
+import aptiRoutes from "./routes/apti.routes.js"
 
 //routes decalaration
 app.use("/api/users", userRoutes)
 app.use("/api/dsa", dsaRoutes)
+app.use("/api/apti", aptiRoutes)
 
 export { app }

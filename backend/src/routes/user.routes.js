@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {Signup,Login,Logout,getCurrentUser,changePassword} from "../controller/user.controller.js";
+import {Signup,Login,Logout,getCurrentUser,changePassword,syncLeetcode,getDSAstats} from "../controller/user.controller.js";
 import { verifyJWT } from "../middlewares/auth.middleware.js";
 import { verifyAdmin } from "../middlewares/admin.middleware.js";
 
@@ -13,6 +13,9 @@ router.route("/login").post(Login)
 router.route("/logout").post(verifyJWT,Logout)
 router.route("/me").get(verifyJWT,getCurrentUser)
 router.route("/changePassword").post(verifyJWT,changePassword)
+router.route("/syncLeetcode").post(verifyJWT,syncLeetcode)
+router.route("/DSAstats").get(verifyJWT,getDSAstats)
+
 
 
 

@@ -2,7 +2,9 @@ import { asyncHandler } from "../utils/asyncHandler.js";
 import { ApiError } from "../utils/ApiError.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import { User } from "../models/user.model.js";
+import { Dsa } from "../models/dsa.models.js";
 import { isValidObjectId } from "mongoose";
+import axios from "axios";
 
 const generateAccessAndRefreshTokens = async(userId) => {
     try {
@@ -172,4 +174,144 @@ const changePassword = asyncHandler(async (req, res) => {
   );
 });
 
-export { Signup, Login, Logout, getCurrentUser, changePassword }
+const syncLeetcode = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  if (!isValidObjectId(userId)) throw new ApiError(400, "User ID is not valid");
+
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const username = user.username;
+  if (!username) throw new ApiError(400, "Username is required for syncing");
+
+  const limit = 20;
+  const solvedMap = new Map(user.DSAsolvedProblems.map(entry => [entry.question.toString(), entry.solvedOn]));
+  const seenSlugs = new Set();
+
+  const response = await axios.post(
+    "https://leetcode.com/graphql",
+    {
+      query: `
+        query getUserData($username: String!, $limit: Int!) {
+          matchedUser(username: $username) {
+            submitStatsGlobal {
+              acSubmissionNum {
+                difficulty
+                count
+                submissions
+              }
+            }
+          }
+          recentAcSubmissionList(username: $username, limit: $limit) {
+            id
+            title
+            titleSlug
+            timestamp
+          }
+        }
+      `,
+      variables: { username, limit },
+    },
+    {
+      headers: {
+        "Content-Type": "application/json",
+        "Referer": `https://leetcode.com/${username}/`,
+        "User-Agent": "Mozilla/5.0",
+      },
+    }
+  );
+
+  const data = response.data?.data;
+  if (!data?.matchedUser) throw new ApiError(404, "LeetCode profile not found");
+
+  const submissions = data.recentAcSubmissionList || [];
+  const slugs = submissions.map(sub => sub.titleSlug);
+  const dbQuestions = await Dsa.find({ slug: { $in: slugs } });
+  const questionMap = new Map(dbQuestions.map(q => [q.slug, q]));
+
+  let newSolvedCount = 0;
+
+  for (const sub of submissions) {
+    if (seenSlugs.has(sub.titleSlug)) continue;
+    seenSlugs.add(sub.titleSlug);
+
+    const dbQuestion = questionMap.get(sub.titleSlug);
+    if (!dbQuestion) continue;
+
+    const qIdStr = dbQuestion._id.toString();
+    const solvedDate = new Date(Number(sub.timestamp) * 1000);
+
+    if (!solvedMap.has(qIdStr)) {
+      solvedMap.set(qIdStr, solvedDate);
+      newSolvedCount++;
+    }
+  }
+
+  if (newSolvedCount > 0) {
+    user.DSAsolvedProblems = Array
+      .from(solvedMap.entries())
+      .map(([questionId, solvedOn]) => ({ question: questionId, solvedOn }))
+      .sort((a, b) => b.solvedOn - a.solvedOn);
+  }
+
+  const stats = data.matchedUser.submitStatsGlobal.acSubmissionNum;
+  const get = d => stats.find(s => s.difficulty === d)?.count || 0;
+
+  user.dsaProblems = {
+    total: get("All"),
+    easy: get("Easy"),
+    medium: get("Medium"),
+    hard: get("Hard"),
+  };
+
+  user.lastSynced = new Date();
+  await user.save();
+
+  return res.status(200).json(
+    new ApiResponse(200, "Daily solved problems synced", {
+      totalSolved: get("All"),
+      easySolved: get("Easy"),
+      mediumSolved: get("Medium"),
+      hardSolved: get("Hard"),
+      newlyAdded: newSolvedCount,
+      lastSynced: user.lastSynced,
+    })
+  );
+});
+
+const getDSAstats = asyncHandler(async (req, res) => {
+    const userId = req.user._id;
+    if (!isValidObjectId(userId)) {
+        throw new ApiError(400, "User ID is not valid");
+    }
+    // console.log(userId);
+    
+
+    // const user = await User.findById(userId).populate("DSAsolvedProblems.question");
+    const user = await User.findById(userId);
+    if (!user) {
+        throw new ApiError(404, "User not found");
+    }
+    console.log(user.dsaProblems);
+
+    const stats = {
+        totalSolved: user.dsaProblems.total,
+        easySolved: user.dsaProblems.easy,
+        mediumSolved: user.dsaProblems.medium,
+        hardSolved: user.dsaProblems.hard,
+        lastSynced: user.lastSynced ? user.lastSynced.toISOString() : null,
+    };
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(
+            200, 
+            "User stats fetched successfully", 
+            { stats }
+        )
+    );
+
+});
+
+export { Signup, Login, Logout, getCurrentUser, changePassword ,syncLeetcode,getDSAstats}

@@ -36,6 +36,24 @@ const userSchema = new Schema(
                 }
             }
         ],
+        dsaProblems:{
+            total: {
+                type: Number,
+                default: 0
+            },
+            easy: {
+                type: Number,
+                default: 0
+            },
+            medium: {
+                type: Number,
+                default: 0
+            },
+            hard: {
+                type: Number,
+                default: 0      
+            }   
+        },
         lastSynced: {
             type: Date,
             default: null,
