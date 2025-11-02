@@ -5,12 +5,14 @@ const app = express();
 
 
 const allowedOrigins = [
-  "http://localhost:5173"
+  "http://localhost:5173",
+  "https://leetcode.com",
 ];
 
 app.use(
   cors({
     origin: function (origin, callback) {
+      // Allow requests with no origin (like Postman) or from allowedOrigins
       if (!origin || allowedOrigins.includes(origin)) {
         callback(null, true);
       } else {
@@ -33,13 +35,22 @@ app.get("/api/ping", (req, res) => {
 });
 
 //routes import
-import userRoutes from "./routes/user.routes.js"
-import dsaRoutes from "./routes/dsa.routes.js"
-import aptiRoutes from "./routes/apti.routes.js"
+import userRouter from "./routes/user.routes.js"
+import questionRouter from "./routes/question.routes.js";
+import studyPlanRouter from "./routes/studyplan.routes.js";
+import contestRouter from "./routes/contest.routes.js";
+import topic_companyRouter from "./routes/topic_company.routes.js";
+import dailyRouter from "./routes/daily.routes.js";
+import OARouter from "./routes/OA.routes.js";
 
 //routes decalaration
-app.use("/api/users", userRoutes)
-app.use("/api/dsa", dsaRoutes)
-app.use("/api/apti", aptiRoutes)
+app.use("/api/users", userRouter)
+app.use("/api/ques", questionRouter)
+app.use("/api/studyplan", studyPlanRouter)
+app.use("/api/contest", contestRouter)
+app.use("/api", topic_companyRouter)
+app.use("/api", dailyRouter)
+app.use("/api/oa", OARouter)
+
 
 export { app }

@@ -1,0 +1,14 @@
+{
+  "manifest_version": 3,
+  "name": "LeetCode OA Tracker",
+  "version": "1.0.0",
+  "description": "Automatically tracks LeetCode submissions and sends them to backend.",
+  "permissions": ["activeTab", "storage", "scripting"],
+  "host_permissions": ["https://localhost:4001/*"],
+  "content_scripts": [
+    {
+      "matches": ["*://leetcode.com/problems/*"],
+      "js": ["content.js"]
+    }
+  ]
+}
