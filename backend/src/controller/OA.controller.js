@@ -87,6 +87,28 @@ const createOA = asyncHandler(async (req, res) => {
   });
 });
 
+const endOA = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+  const oa = await OA.findOne({ user: userId, status: "active" }).populate("questions.question");
+  if (!oa) {
+    return res.status(204).json({ success: true, message: "No active OA found for this user.!" });
+  }
+
+  oa.status = "expired";
+  oa.endedAt = new Date();
+  await oa.save();
+  
+  res.status(200).json( 
+    new ApiResponse(true, "OA ended successfully", {
+      oaId: oa._id,
+      endedAt: oa.endedAt,
+    })
+  );
+});
+
+
+
+
 const getOAstatus = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const oa = await OA.findOne({ user: userId, status: "active" }).populate("questions.question");
@@ -319,4 +341,4 @@ const getOAhistory = asyncHandler(async (req, res) => {
 });
 
 
-export { verifyExtension, createOA, getOAstatus, validateSubmission, deleteOA, getOAhistory };
+export { verifyExtension, createOA, getOAstatus, endOA, validateSubmission, deleteOA, getOAhistory };
