@@ -151,9 +151,9 @@ export default function PracticePage() {
 								</div>
 								<button
 									onClick={() => alert("Joining OA (demo)")}
-									className="px-4 py-2 bg-indigo-500 hover:bg-indigo-600 text-white rounded font-semibold shadow-md"
+									className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded font-semibold shadow-md"
 								>
-									Join OA
+									End OA
 								</button>
 							</>
 						) : (
