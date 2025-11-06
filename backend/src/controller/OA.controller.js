@@ -91,7 +91,7 @@ const getOAstatus = asyncHandler(async (req, res) => {
   const userId = req.user._id;
   const oa = await OA.findOne({ user: userId, status: "active" }).populate("questions.question");
   if (!oa) {
-    throw new ApiError(404, "No active OA found for the user.");
+    return res.status(204).json({ success: true, message: "No active OA found for this user.!" });
   }
 
   if (dayjs().isSameOrAfter(dayjs(oa.endedAt))) {
@@ -131,7 +131,7 @@ const validateSubmission = asyncHandler(async (req, res) => {
 
   const user = await User.findOne({ username });
   if (!user) {
-    return res.status(404).json({ success: false, message: "User not found." });
+    return res.status(404).json({ success: true, message: "User not found." });
   }
 
   const oa = await OA.findOne({ user: user._id, status: "active" });
@@ -187,4 +187,136 @@ const deleteOA = asyncHandler(async (req, res) => {
   );
 });
 
-export { verifyExtension, createOA, getOAstatus, validateSubmission, deleteOA };
+
+const getOAhistory = asyncHandler(async (req, res) => {
+  const userId = req.user._id;
+
+
+  const oas = await OA.find({
+    user: userId,
+    status: { $in: ["completed", "expired"] }
+  })
+    .sort({ endedAt: -1, createdAt: -1 })
+    .limit(5)
+    .populate("questions.question")
+    .lean();
+
+
+  const emptyAggregate = {
+    sessions: 0,
+    totalQuestions: 0,
+    totalCompleted: 0,
+    completionRatePercent: 0,
+    totalTimeMinutes: 0,
+    avgSessionDurationMinutes: 0,
+    difficultyBreakdown: { Easy: 0, Medium: 0, Hard: 0 }
+  };
+
+  if (!oas || oas.length === 0) {
+    return res.status(200).json(
+      new ApiResponse(true, 200, "No OA history found", {
+        recent: [],
+        aggregate: emptyAggregate
+      })
+    );
+  }
+
+  const recent = [];
+  const agg = {
+    sessions: oas.length,
+    totalQuestions: 0,
+    totalCompleted: 0,
+    totalTimeMinutes: 0,
+    difficultyBreakdown: { Easy: 0, Medium: 0, Hard: 0 }
+  };
+
+  const safeDifficulty = (qDoc, qItem) => {
+    if (qDoc && qDoc.difficulty) return qDoc.difficulty;
+    if (qItem && qItem.difficulty) return qItem.difficulty;
+  };
+
+  for (const oa of oas) {
+
+    let durationMinutes = null;
+    if (oa.startedAt && oa.endedAt) {
+      durationMinutes = Math.round((new Date(oa.endedAt) - new Date(oa.startedAt)) / 60000);
+    } else if (oa.startedAt && !oa.endedAt) {
+
+      durationMinutes = Math.round((Date.now() - new Date(oa.startedAt)) / 60000);
+    }
+
+    const questions = (oa.questions || []).map((q) => {
+      const qDoc = q.question ?? null;
+      const difficulty = safeDifficulty(qDoc, q);
+      return {
+        id: qDoc?._id ?? q.question,
+        title: qDoc?.title ?? null,
+        slug: q.slug ?? qDoc?.slug ?? null,
+        difficulty,
+        status: q.status,
+        completedOn: q.completedOn ?? null,
+        url: qDoc?.slug ? `https://leetcode.com/problems/${qDoc.slug}/` : null
+      };
+    });
+
+
+    const sessionDifficultyCounts = { Easy: 0, Medium: 0, Hard: 0};
+    for (const qq of questions) {
+      if (qq.difficulty === "Easy") sessionDifficultyCounts.Easy++;
+      else if (qq.difficulty === "Medium") sessionDifficultyCounts.Medium++;
+      else if (qq.difficulty === "Hard") sessionDifficultyCounts.Hard++;
+    }
+
+    const sessionTotalQuestions = oa.totalQuestions ?? questions.length;
+    const sessionCompleted = oa.completedCount ?? questions.filter(q => q.status === "completed").length;
+    const sessionCompletionRate = sessionTotalQuestions > 0
+      ? Math.round((sessionCompleted / sessionTotalQuestions) * 100)
+      : 0;
+
+
+    agg.totalQuestions += sessionTotalQuestions;
+    agg.totalCompleted += sessionCompleted;
+    if (durationMinutes !== null) agg.totalTimeMinutes += durationMinutes;
+    for (const k of Object.keys(sessionDifficultyCounts)) {
+      agg.difficultyBreakdown[k] += sessionDifficultyCounts[k];
+    }
+
+    recent.push({
+      oaId: oa._id,
+      status: oa.status,
+      startedAt: oa.startedAt,
+      endedAt: oa.endedAt,
+      durationMinutes,
+      totalQuestions: sessionTotalQuestions,
+      completedCount: sessionCompleted,
+      completionRatePercent: sessionCompletionRate,
+      difficultyCounts: sessionDifficultyCounts,
+      questions,
+      createdAt: oa.createdAt,
+      updatedAt: oa.updatedAt
+    });
+  }
+
+  const aggregate = {
+    sessions: agg.sessions,
+    totalQuestions: agg.totalQuestions,
+    totalCompleted: agg.totalCompleted,
+    completionRatePercent: agg.totalQuestions > 0 ? Math.round((agg.totalCompleted / agg.totalQuestions) * 100) : 0,
+    totalTimeMinutes: agg.totalTimeMinutes,
+    avgSessionDurationMinutes: agg.sessions > 0 ? Math.round(agg.totalTimeMinutes / agg.sessions) : 0,
+    difficultyBreakdown: agg.difficultyBreakdown
+  };
+
+  return res.status(200).json(
+    new ApiResponse(
+      {
+        recent,
+        aggregate
+      },
+      true, 200, "Recent OA history retrieved"
+    )
+  );
+});
+
+
+export { verifyExtension, createOA, getOAstatus, validateSubmission, deleteOA, getOAhistory };

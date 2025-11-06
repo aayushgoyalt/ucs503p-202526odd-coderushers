@@ -15,6 +15,8 @@ const Admin = React.lazy(() => import('./pages/Admin'));
 const Contest = React.lazy(() => import('./pages/Contest'));
 const Topic = React.lazy(() => import('./pages/Topic'));
 const Company = React.lazy(() => import('./pages/Company'));
+const OA = React.lazy(() => import('./pages/OA'));
+const Practice = React.lazy(() => import('./pages/practice'));
 
 
 const router = createBrowserRouter([
@@ -63,6 +65,22 @@ const router = createBrowserRouter([
         element: (
           <Protected authentication>
             <Company />
+          </Protected>
+        ),
+      },
+      {
+        path: "/oa",
+        element: (
+          <Protected authentication>
+            <OA />
+          </Protected>
+        ),
+      },
+      {
+        path: "/practice",
+        element: (
+          <Protected authentication>
+            <Practice />
           </Protected>
         ),
       },

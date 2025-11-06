@@ -166,8 +166,6 @@ export default function Admin() {
             className="w-full bg-gray-900 border border-gray-700 text-white rounded-md px-3 py-2"
           >
             <option value="">Select a user</option>
-            <option value="babygirl">Babygirl</option>
-            <option value="cutiee">Cutiee</option>
           </select>
         </div>
 

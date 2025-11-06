@@ -60,6 +60,12 @@ export default function Header() {
             <Link to="/contest" className={`${isActive("/profile")} ${navItemClass}`}>
               Contest
             </Link>
+            <Link to="/oa" className={`${isActive("/oa")} ${navItemClass}`}>
+              OA
+            </Link>
+            <Link to="/practice" className={`${isActive("/practice")} ${navItemClass}`}>
+              Practice
+            </Link>
             {showAdmin && (
               <Link to="/admin" className={`${isActive("/admin")} ${navItemClass}`}>
                 Admin
