@@ -50,6 +50,14 @@ export default function AuthPage() {
     }
   };
 
+  const handleGuestLogin = () => {
+    const guestUsername = "ak_kaushesh";
+    const guestPassword = "Harshita#01";
+    
+    setUsername(guestUsername);
+    setPassword(guestPassword);
+  };
+
   return (
     <div className="min-h-screen flex items-center justify-center bg-[#0f0f1a]">
       <Toaster position="top-right" reverseOrder={false} />
@@ -57,7 +65,7 @@ export default function AuthPage() {
         {/* Logo */}
         <div className="text-center mb-8 flex flex-col items-center">
           <img src="/leetcode.svg" alt="LeetCode Logo" className="w-14 h-14 mb-4 drop-shadow-md" />
-          <h1 className="text-3xl font-extrabold text-white tracking-wide">LeetCode Tracker</h1>
+          <h1 className="text-3xl font-extrabold text-white tracking-wide">HireReady</h1>
           <p className="text-slate-400 mt-1 text-sm">
             {isLogin ? "Track your coding progress" : "Create your account"}
           </p>
@@ -152,6 +160,19 @@ export default function AuthPage() {
             )}
           </button>
         </form>
+
+        {/* Guest Login Button */}
+        {isLogin && (
+          <button
+            onClick={handleGuestLogin}
+            disabled={loading}
+            className={`w-full mt-4 bg-slate-600 hover:bg-slate-700 text-white py-2 px-4 rounded-md shadow-md focus:outline-none focus:ring-2 focus:ring-slate-400 focus:ring-offset-2 transition duration-200 font-semibold tracking-wide ${
+              loading ? "opacity-50 cursor-not-allowed" : ""
+            }`}
+          >
+            Login as Guest
+          </button>
+        )}
 
         {/* Toggle Button */}
         <div className="text-center mt-6">
